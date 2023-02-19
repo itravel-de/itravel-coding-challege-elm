@@ -5,12 +5,8 @@ To run the project correctly you'll need Parcel, you can download it using this 
 
 ### Yarn
 ```sh
+yarn
 yarn global add parcel-bundler
-```
-
-### npm
-```sh
-npm install -g parcel-bundler
 ```
 
 Once parcel is installed simply cd to the project's folder, and run this command:
