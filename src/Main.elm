@@ -10,7 +10,7 @@ import Dict exposing (Dict)
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (onClick)
-import Modal exposing (..)
+import Modal exposing (modal)
 import Stylesheet exposing (..)
 
 
@@ -84,7 +84,7 @@ update msg model =
                         Dict.insert ( x, y ) model.currentPlayer model.board
                 in
                 -- If the move was valid, switch players and check for a winner or a draw.
-                if isEmpty model ( x, y ) then
+                if isEmpty model.board ( x, y ) then
                     { model
                         | currentPlayer = changePlayer model.currentPlayer
                         , board = newBoard
@@ -93,15 +93,7 @@ update msg model =
                                 Started
 
                             else
-                                case checkWinner newBoard model of
-                                    Just X ->
-                                        Finished (Just X)
-
-                                    Just O ->
-                                        Finished (Just O)
-
-                                    _ ->
-                                        Finished Nothing
+                                Finished (checkWinner newBoard model)
                     }
 
                 else
@@ -116,7 +108,7 @@ update msg model =
             -- Increase the board size by 1.
             let
                 newBoardSize =
-                    if model.boardSize > 4 then
+                    if model.boardSize > 4 then -- I have limited here to 5 squares at most, but this can work for any number
                         5
                     else
                         model.boardSize + 1
@@ -170,9 +162,9 @@ showPlayer player =
             "O"
 
 -- Status of the game. Who's turn is it, whether a player has won, or there was a draw.
-viewStatus : Model -> String
-viewStatus model =
-    case model.gameState of
+viewStatus : GameState -> Player -> String
+viewStatus gameState currentPlayer =
+    case gameState of
         Finished winner ->
             case winner of
                 Just player ->
@@ -182,20 +174,20 @@ viewStatus model =
                     "Draw"
 
         Started ->
-            "Now playing: " ++ writePlayer model.currentPlayer
+            "Now playing: " ++ writePlayer currentPlayer
 
 -- Board visualisation, while saving the position of each player (X, Y)
-viewBoard : Model -> List (Html Msg)
-viewBoard model =
-    List.range 0 (model.boardSize - 1)
+viewBoard : Int -> Board -> List (Html Msg)
+viewBoard boardSize board =
+    List.range 0 (boardSize - 1)
         |> List.map
             (\x ->
                 div [ css [ rowStyle ] ]
-                    (List.range 0 (model.boardSize - 1)
+                    (List.range 0 (boardSize - 1)
                         |> List.map
                             (\y ->
                                 div [ onClick <| SquareClick ( x, y ), css [ squareStyle ] ]
-                                    [ case Dict.get ( x, y ) model.board of
+                                    [ case Dict.get ( x, y ) board of
                                         Just player ->
                                             text <| showPlayer player
 
@@ -216,8 +208,8 @@ view model =
           else
             div [] []
 
-        , div [ css [ titleStyle ] ] [ text <| viewStatus model ]
-        , div [] <| viewBoard model
+        , div [ css [ titleStyle ] ] [ text <| viewStatus model.gameState model.currentPlayer ]
+        , div [] <| viewBoard model.boardSize model.board
         , case model.gameState of
             Started ->
                 div [] []
@@ -276,9 +268,9 @@ allEqual board l =
                 Nothing
 
 -- Function to check if a square in the board is empty (i.e. contains 0)
-isEmpty : Model -> ( Int, Int ) -> Bool
-isEmpty model ( x, y ) =
-    case Dict.get ( x, y ) model.board of
+isEmpty : Board -> ( Int, Int ) -> Bool
+isEmpty board ( x, y ) =
+    case Dict.get ( x, y ) board of
         Just _ ->
             False
 

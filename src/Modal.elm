@@ -1,4 +1,4 @@
-module Modal exposing (..)
+module Modal exposing (modal)
 
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
