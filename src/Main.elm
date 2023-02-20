@@ -2,6 +2,7 @@
 -- It provides the user with a 3x3, 4x4, 5x5 board that can be clicked to add X or O symbols.
 -- It keeps track of the current player and the game state, and displays a message to the user when the game ends.
 
+
 module Main exposing (main)
 
 import Browser
@@ -18,6 +19,7 @@ main : Program () Model Msg
 main =
     Browser.sandbox { init = initialModel, view = view >> toUnstyled, update = update }
 
+
 type alias Model =
     { board : Board -- The current board state, mapping the positions to players (X or O).
     , currentPlayer : Player -- The current player (X or O).
@@ -26,21 +28,37 @@ type alias Model =
     , toggleModal : Bool -- Whether to show the initial play modal.
     }
 
+
+
 -- The `Player` type defines the two possible players (X or O).
+
+
 type Player
     = X
     | O
 
+
+
 -- The `GameState` type defines the two possible game states (Started or Finished).
+
+
 type GameState
     = Started
     | Finished (Maybe Player)
 
+
+
 -- The `Board` type is an alias for a dictionary mapping a position (x,y) to a player (X or O).
+
+
 type alias Board =
     Dict ( Int, Int ) Player
 
+
+
 -- The initial model, when the game starts.
+
+
 initialModel : Model
 initialModel =
     { board = Dict.empty -- An empty board.
@@ -58,7 +76,11 @@ type Msg
     | PlayAgain -- Start a new game.
     | ToggleModal -- Hide the modal to change the board size.
 
+
+
 -- This function change the player after each turn
+
+
 changePlayer : Player -> Player
 changePlayer player =
     case player of
@@ -108,8 +130,10 @@ update msg model =
             -- Increase the board size by 1.
             let
                 newBoardSize =
-                    if model.boardSize > 4 then -- I have limited here to 5 squares at most, but this can work for any number
+                    if model.boardSize > 4 then
+                        -- I have limited here to 5 squares at most, but this can work for any number
                         5
+
                     else
                         model.boardSize + 1
             in
@@ -126,6 +150,7 @@ update msg model =
                 newBoardSize =
                     if model.boardSize < 4 then
                         3
+
                     else
                         model.boardSize - 1
             in
@@ -141,7 +166,10 @@ update msg model =
             { model | toggleModal = False }
 
 
+
 -- Name of Player
+
+
 writePlayer : Player -> String
 writePlayer player =
     case player of
@@ -151,7 +179,11 @@ writePlayer player =
         O ->
             "Player O"
 
+
+
 -- Showing the symbol for each player
+
+
 showPlayer : Player -> String
 showPlayer player =
     case player of
@@ -161,7 +193,11 @@ showPlayer player =
         O ->
             "O"
 
+
+
 -- Status of the game. Who's turn is it, whether a player has won, or there was a draw.
+
+
 viewStatus : GameState -> Player -> String
 viewStatus gameState currentPlayer =
     case gameState of
@@ -176,7 +212,11 @@ viewStatus gameState currentPlayer =
         Started ->
             "Now playing: " ++ writePlayer currentPlayer
 
+
+
 -- Board visualisation, while saving the position of each player (X, Y)
+
+
 viewBoard : Int -> Board -> List (Html Msg)
 viewBoard boardSize board =
     List.range 0 (boardSize - 1)
@@ -207,7 +247,6 @@ view model =
 
           else
             div [] []
-
         , div [ css [ titleStyle ] ] [ text <| viewStatus model.gameState model.currentPlayer ]
         , div [] <| viewBoard model.boardSize model.board
         , case model.gameState of
@@ -215,34 +254,54 @@ view model =
                 div [] []
 
             Finished _ ->
-                button [ css [playAgainButtonStyle], onClick PlayAgain ] [ text "Play Again" ]
+                button [ css [ playAgainButtonStyle ], onClick PlayAgain ] [ text "Play Again" ]
         ]
 
+
+
 -- Function to get a row from the board
+
+
 row : Model -> b -> List ( Int, b )
 row model y =
     List.range 0 (model.boardSize - 1)
         |> List.map (\x -> ( x, y ))
 
+
+
 -- Function to get a column from the board
+
+
 collumn : Model -> b -> List ( b, Int )
 collumn model x =
     List.range 0 (model.boardSize - 1)
         |> List.map (\y -> ( x, y ))
 
+
+
 -- Function to get the diagonal from the board (top left to bottom right)
+
+
 diagonal1 : Model -> List ( Int, Int )
 diagonal1 model =
     List.range 0 (model.boardSize - 1)
         |> List.map (\i -> ( i, i ))
 
+
+
 -- Function to get the diagonal from the board (top right to bottom left)
+
+
 diagonal2 : Model -> List ( Int, Int )
 diagonal2 model =
     List.range 0 (model.boardSize - 1)
         |> List.map (\i -> ( i, model.boardSize - 1 - i ))
 
+
+
 -- Function to get all the winning positions
+
+
 winPositions : Model -> List (List ( Int, Int ))
 winPositions model =
     (List.range 0 (model.boardSize - 1)
@@ -253,7 +312,11 @@ winPositions model =
            )
         ++ [ diagonal1 model, diagonal2 model ]
 
+
+
 -- Function to check if all elements in a list are equal
+
+
 allEqual : Board -> List ( Int, Int ) -> Maybe Player
 allEqual board l =
     case l of
@@ -267,7 +330,11 @@ allEqual board l =
             else
                 Nothing
 
+
+
 -- Function to check if a square in the board is empty (i.e. contains 0)
+
+
 isEmpty : Board -> ( Int, Int ) -> Bool
 isEmpty board ( x, y ) =
     case Dict.get ( x, y ) board of
@@ -277,7 +344,11 @@ isEmpty board ( x, y ) =
         Nothing ->
             True
 
+
+
 -- Function to check if a player has won the game
+
+
 checkWinner : Board -> Model -> Maybe Player
 checkWinner board model =
     Maybe.withDefault Nothing

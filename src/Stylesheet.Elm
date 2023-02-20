@@ -54,6 +54,7 @@ titleStyle =
         , color (hex "F2F2F2")
         ]
 
+
 paragraphStyle : Style
 paragraphStyle =
     batch
@@ -111,6 +112,7 @@ modalStyle =
         , Css.property "gap" "30px"
         ]
 
+
 playButtonStyle : Style
 playButtonStyle =
     batch
@@ -123,10 +125,11 @@ playButtonStyle =
         , alignItems center
         , cursor pointer
         , hover [ backgroundColor (hex "fc6a5f") ]
-        , before [ position absolute
-                 , borderLeft3 (px 30) solid (hex "F2F2F2")
-                 , borderTop3 (px 15) solid transparent
-                 , borderBottom3 (px 15) solid transparent 
-                 , Css.property "content" "''"
-                 ]
+        , before
+            [ position absolute
+            , borderLeft3 (px 30) solid (hex "F2F2F2")
+            , borderTop3 (px 15) solid transparent
+            , borderBottom3 (px 15) solid transparent
+            , Css.property "content" "''"
+            ]
         ]
