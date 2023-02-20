@@ -259,12 +259,21 @@ view model =
 
 
 
+-- Reusable Function
+
+
+indices : Model -> List Int
+indices model =
+    List.range 0 (model.boardSize - 1)
+
+
+
 -- Function to get a row from the board
 
 
 row : Model -> b -> List ( Int, b )
 row model y =
-    List.range 0 (model.boardSize - 1)
+    indices model
         |> List.map (\x -> ( x, y ))
 
 
@@ -274,7 +283,7 @@ row model y =
 
 collumn : Model -> b -> List ( b, Int )
 collumn model x =
-    List.range 0 (model.boardSize - 1)
+    indices model
         |> List.map (\y -> ( x, y ))
 
 
@@ -284,7 +293,7 @@ collumn model x =
 
 diagonal1 : Model -> List ( Int, Int )
 diagonal1 model =
-    List.range 0 (model.boardSize - 1)
+    indices model
         |> List.map (\i -> ( i, i ))
 
 
@@ -294,7 +303,7 @@ diagonal1 model =
 
 diagonal2 : Model -> List ( Int, Int )
 diagonal2 model =
-    List.range 0 (model.boardSize - 1)
+    indices model
         |> List.map (\i -> ( i, model.boardSize - 1 - i ))
 
 
@@ -304,10 +313,10 @@ diagonal2 model =
 
 winPositions : Model -> List (List ( Int, Int ))
 winPositions model =
-    (List.range 0 (model.boardSize - 1)
+    (indices model
         |> List.map (\y -> row model y)
     )
-        ++ (List.range 0 (model.boardSize - 1)
+        ++ (indices model
                 |> List.map (\x -> collumn model x)
            )
         ++ [ diagonal1 model, diagonal2 model ]
@@ -351,16 +360,16 @@ isEmpty board ( x, y ) =
 
 checkWinner : Board -> Model -> Maybe Player
 checkWinner board model =
-    Maybe.withDefault Nothing
-        (List.head <|
-            List.filter
-                (\x ->
-                    case x of
-                        Just _ ->
-                            True
+    winPositions model
+        |> List.map (allEqual board)
+        |> List.filter
+            (\x ->
+                case x of
+                    Just _ ->
+                        True
 
-                        _ ->
-                            False
-                )
-                (List.map (allEqual board) (winPositions model))
-        )
+                    _ ->
+                        False
+            )
+        |> List.head
+        |> Maybe.withDefault Nothing
