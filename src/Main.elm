@@ -25,7 +25,7 @@ type alias Model =
     , currentPlayer : Player -- The current player (X or O).
     , gameState : GameState -- The current game state (Started or Finished).
     , boardSize : Int -- The size of the board (3, 4, or 5).
-    , toggleModal : Bool -- Whether to show the initial play modal.
+    , isModalShown : Bool -- Whether to show the initial play modal.
     }
 
 
@@ -44,7 +44,11 @@ type Player
 
 type GameState
     = Started
-    | Finished (Maybe Player)
+    | Finished FinishedState
+
+type FinishedState
+    = Draw
+    | Win Player
 
 
 
@@ -65,7 +69,7 @@ initialModel =
     , currentPlayer = X -- Player X starts.
     , gameState = Started -- The game is just starting.
     , boardSize = 3 -- A 3x3 board.
-    , toggleModal = True -- Show the initial play modal.
+    , isModalShown = True -- Show the initial play modal.
     }
 
 
@@ -106,16 +110,20 @@ update msg model =
                         Dict.insert ( x, y ) model.currentPlayer model.board
                 in
                 -- If the move was valid, switch players and check for a winner or a draw.
-                if isEmpty model.board ( x, y ) then
+                if isSquareEmpty model.board ( x, y ) then
                     { model
                         | currentPlayer = changePlayer model.currentPlayer
                         , board = newBoard
                         , gameState =
-                            if Dict.size model.board < (model.boardSize * model.boardSize - 1) && checkWinner newBoard model == Nothing then
+                            if Dict.size model.board < (model.boardSize * model.boardSize - 1) && checkWinner newBoard model.boardSize == Nothing then
                                 Started
 
                             else
-                                Finished (checkWinner newBoard model)
+                                case checkWinner newBoard model.boardSize of
+                                    Just X -> Finished (Win X)
+                                    Just O -> Finished (Win O)
+                                    _ -> Finished (Draw)
+                                    
                     }
 
                 else
@@ -129,16 +137,16 @@ update msg model =
         AddCell ->
             -- Increase the board size by 1.
             let
-                newBoardSize =
-                    if model.boardSize > 4 then
-                        -- I have limited here to 5 squares at most, but this can work for any number
-                        5
-
-                    else
-                        model.boardSize + 1
+               maxBoardSize : Int
+               maxBoardSize = 
+                   5
             in
             { model
-                | boardSize = newBoardSize
+                | boardSize =
+                       if model.boardSize == maxBoardSize then
+                            model.boardSize
+                        else
+                            model.boardSize + 1
                 , board = Dict.empty
                 , currentPlayer = X
                 , gameState = Started
@@ -158,26 +166,25 @@ update msg model =
                 | boardSize = newBoardSize
                 , board = Dict.empty
                 , currentPlayer = X
-                , gameState = Started
             }
 
         ToggleModal ->
             -- Hide the modal to change the board size.
-            { model | toggleModal = False }
+            { model | isModalShown = False }
 
 
 
 -- Name of Player
 
 
-writePlayer : Player -> String
-writePlayer player =
-    case player of
-        X ->
+winningPlayer : FinishedState -> String
+winningPlayer state =
+    case state of
+        Win X ->
             "Player X"
-
-        O ->
+        Win O ->
             "Player O"
+        _ -> ""
 
 
 
@@ -201,16 +208,16 @@ showPlayer player =
 viewStatus : GameState -> Player -> String
 viewStatus gameState currentPlayer =
     case gameState of
-        Finished winner ->
-            case winner of
-                Just player ->
-                    writePlayer player ++ " Won!"
-
-                Nothing ->
+        Finished state ->
+            case state of
+                Win _ ->
+                    winningPlayer state ++ " Won!"
+                
+                _ ->
                     "Draw"
 
         Started ->
-            "Now playing: " ++ writePlayer currentPlayer
+            "Now playing: " ++ showPlayer currentPlayer
 
 
 
@@ -242,7 +249,7 @@ viewBoard boardSize board =
 view : Model -> Html Msg
 view model =
     div [ css [ mainStyle ] ]
-        [ if model.toggleModal then
+        [ if model.isModalShown then
             modal model.boardSize ToggleModal DecCell AddCell
 
           else
@@ -261,39 +268,36 @@ view model =
 
 -- Reusable Function
 
-
-indices : Model -> List Int
-indices model =
-    List.range 0 (model.boardSize - 1)
-
-
+indices : Int -> List Int
+indices boardSize =
+    List.range 0 (boardSize - 1)
 
 -- Function to get a row from the board
 
 
-row : Model -> b -> List ( Int, b )
-row model y =
-    indices model
-        |> List.map (\x -> ( x, y ))
+row : Int -> Int -> List ( Int, Int )
+row boardSize rowIndex =
+    indices boardSize
+        |> List.map (\columnIndex -> ( columnIndex, rowIndex ))
 
 
 
 -- Function to get a column from the board
 
 
-collumn : Model -> b -> List ( b, Int )
-collumn model x =
-    indices model
-        |> List.map (\y -> ( x, y ))
+collumn : Int -> Int -> List ( Int, Int )
+collumn boardSize columnIndex =
+    indices boardSize
+        |> List.map (\rowIndex -> ( columnIndex, rowIndex ))
 
 
 
 -- Function to get the diagonal from the board (top left to bottom right)
 
 
-diagonal1 : Model -> List ( Int, Int )
-diagonal1 model =
-    indices model
+diagonal1 : Int -> List ( Int, Int )
+diagonal1 boardSize =
+    indices boardSize
         |> List.map (\i -> ( i, i ))
 
 
@@ -301,25 +305,25 @@ diagonal1 model =
 -- Function to get the diagonal from the board (top right to bottom left)
 
 
-diagonal2 : Model -> List ( Int, Int )
-diagonal2 model =
-    indices model
-        |> List.map (\i -> ( i, model.boardSize - 1 - i ))
+diagonal2 : Int -> List ( Int, Int )
+diagonal2 boardSize =
+    indices boardSize
+        |> List.map (\i -> ( i, boardSize - 1 - i ))
 
 
 
 -- Function to get all the winning positions
 
 
-winPositions : Model -> List (List ( Int, Int ))
-winPositions model =
-    (indices model
-        |> List.map (\y -> row model y)
+winPositions : Int -> List (List ( Int, Int ))
+winPositions boardSize =
+    (indices boardSize
+        |> List.map (\y -> row boardSize y)
     )
-        ++ (indices model
-                |> List.map (\x -> collumn model x)
+        ++ (indices boardSize
+                |> List.map (\x -> collumn boardSize x)
            )
-        ++ [ diagonal1 model, diagonal2 model ]
+        ++ [ diagonal1 boardSize, diagonal2 boardSize ]
 
 
 
@@ -344,8 +348,8 @@ allEqual board l =
 -- Function to check if a square in the board is empty (i.e. contains 0)
 
 
-isEmpty : Board -> ( Int, Int ) -> Bool
-isEmpty board ( x, y ) =
+isSquareEmpty : Board -> ( Int, Int ) -> Bool
+isSquareEmpty board ( x, y ) =
     case Dict.get ( x, y ) board of
         Just _ ->
             False
@@ -358,9 +362,9 @@ isEmpty board ( x, y ) =
 -- Function to check if a player has won the game
 
 
-checkWinner : Board -> Model -> Maybe Player
-checkWinner board model =
-    winPositions model
+checkWinner : Board -> Int -> Maybe Player
+checkWinner board boardSize =
+    winPositions boardSize
         |> List.map (allEqual board)
         |> List.filter
             (\x ->
