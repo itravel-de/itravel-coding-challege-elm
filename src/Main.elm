@@ -154,9 +154,12 @@ update msg model =
         DecCell ->
             -- Decrease the board size by 1.
             let
+                minBoardSize: Int
+                minBoardSize =
+                    3
                 newBoardSize =
-                    if model.boardSize < 4 then
-                        3
+                    if model.boardSize == minBoardSize then
+                        model.boardSize
 
                     else
                         model.boardSize - 1
