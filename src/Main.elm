@@ -46,6 +46,7 @@ type GameState
     = Started
     | Finished FinishedState
 
+
 type FinishedState
     = Draw
     | Win Player
@@ -120,10 +121,14 @@ update msg model =
 
                             else
                                 case checkWinner newBoard model.boardSize of
-                                    Just X -> Finished (Win X)
-                                    Just O -> Finished (Win O)
-                                    _ -> Finished (Draw)
-                                    
+                                    Just X ->
+                                        Finished (Win X)
+
+                                    Just O ->
+                                        Finished (Win O)
+
+                                    _ ->
+                                        Finished Draw
                     }
 
                 else
@@ -137,16 +142,17 @@ update msg model =
         AddCell ->
             -- Increase the board size by 1.
             let
-               maxBoardSize : Int
-               maxBoardSize = 
-                   5
+                maxBoardSize : Int
+                maxBoardSize =
+                    5
             in
             { model
                 | boardSize =
-                       if model.boardSize == maxBoardSize then
-                            model.boardSize
-                        else
-                            model.boardSize + 1
+                    if model.boardSize == maxBoardSize then
+                        model.boardSize
+
+                    else
+                        model.boardSize + 1
                 , board = Dict.empty
                 , currentPlayer = X
             }
@@ -154,9 +160,10 @@ update msg model =
         DecCell ->
             -- Decrease the board size by 1.
             let
-                minBoardSize: Int
+                minBoardSize : Int
                 minBoardSize =
                     3
+
                 newBoardSize =
                     if model.boardSize == minBoardSize then
                         model.boardSize
@@ -184,9 +191,12 @@ winningPlayer state =
     case state of
         Win X ->
             "Player X"
+
         Win O ->
             "Player O"
-        _ -> ""
+
+        _ ->
+            ""
 
 
 
@@ -214,7 +224,7 @@ viewStatus gameState currentPlayer =
             case state of
                 Win _ ->
                     winningPlayer state ++ " Won!"
-                
+
                 _ ->
                     "Draw"
 
@@ -270,9 +280,12 @@ view model =
 
 -- Reusable Function
 
+
 indices : Int -> List Int
 indices boardSize =
     List.range 0 (boardSize - 1)
+
+
 
 -- Function to get a row from the board
 
