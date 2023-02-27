@@ -149,7 +149,6 @@ update msg model =
                             model.boardSize + 1
                 , board = Dict.empty
                 , currentPlayer = X
-                , gameState = Started
             }
 
         DecCell ->
